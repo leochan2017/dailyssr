@@ -74,7 +74,9 @@ const getSsrList = async () => {
     return { success: true, msg: '新货到', data: copiedText.split('\n') }
     // return { success: true, msg: '新货到', data: copiedText }
   } catch (e) {
-    return { success: false, msg: '出错了', data: e }
+    const msg = '获取酸酸乳列表出错'
+    console.log(msg, e)
+    return { success: false, msg: msg, data: e }
   }
 }
 
@@ -112,10 +114,15 @@ const sendToWeChatFromSeverJiang = data => {
 
 
 /** 往钉钉推送信息 */
-const sendToDd = async data => {
+const sendToDd = async res => {
   // 钉钉机器人初始化
   const { baseUrl, accessToken, secret } = __config__.dd
   const ddRobot = new ChatBot({ baseUrl, accessToken, secret })
+
+  if (!res.success) {
+    ddRobot.text(res.msg)
+    return
+  }
 
   /** 卡片-代码提交信息 */
   const title = `钉～请查收${today}的新鲜酸酸乳`
@@ -132,12 +139,6 @@ const sendToDd = async data => {
     // text += `[${item}](${item})\n\n`
   }
 
-  // const at2 = {
-  //     atMobiles: ['177xxxx9889'],
-  //     isAtAll: false,
-  // }
-  // await ddRobot.markdown(title, text, at2)
-
   await ddRobot.markdown(title, text)
 
   console.log('推送钉钉完成')
@@ -145,29 +146,33 @@ const sendToDd = async data => {
 
 /** 主程序 */
 const main = async () => {
-  // const res = await getSsrList()
+  const res = await getSsrList()
   // console.log('list response: ', res)
-  // sendToDd(res.data)
+  sendToDd(res)
 
   // 穷人没钱充钱，算了
   // sendToWeChatFromSeverJiang(res)
 
   // dev code
-  sendToDd([
-    'ssr://MTk1LjEzMy4xMS4xMTU6OTkyMTpvcmlnaW46cmM0OnBsYWluOmJHNWpiaTV2Y21jZ05XWS8_b2Jmc3BhcmFtPSZyZW1hcmtzPTVMLUU1NzJYNXBhdlFRJmdyb3VwPVRHNWpiaTV2Y21j',
-    'ssr://MTk0LjE0Ny44Ni4xMzA6OTkyMTpvcmlnaW46cmM0OnBsYWluOmJHNWpiaTV2Y21jZ05XWS8_b2Jmc3BhcmFtPSZyZW1hcmtzPTVMLUU1NzJYNXBhdlFnJmdyb3VwPVRHNWpiaTV2Y21j',
-    'ssr://NDUuMTQwLjE3MC4yMzI6OTkyMTpvcmlnaW46cmM0OnBsYWluOmJHNWpiaTV2Y21jZ05XWS8_b2Jmc3BhcmFtPSZyZW1hcmtzPTVMLUU1NzJYNXBhdlF3Jmdyb3VwPVRHNWpiaTV2Y21j',
-    'ssr://OTEuMTk4LjIyMC4yMDA6OTkyMTpvcmlnaW46cmM0OnBsYWluOmJHNWpiaTV2Y21jZ05XWS8_b2Jmc3BhcmFtPSZyZW1hcmtzPTVMLUU1NzJYNXBhdlJBJmdyb3VwPVRHNWpiaTV2Y21j',
-    'ssr://NDYuMjkuMTY3LjIzODo5OTIxOm9yaWdpbjpyYzQ6cGxhaW46Ykc1amJpNXZjbWNnTm1jLz9vYmZzcGFyYW09JnJlbWFya3M9NUwtRTU3Mlg1cGF2VVEmZ3JvdXA9VEc1amJpNXZjbWM',
-    'ssr://NDYuMjkuMTY3LjE5NTo5OTIxOm9yaWdpbjpyYzQ6cGxhaW46Ykc1amJpNXZjbWNnTm1jLz9vYmZzcGFyYW09JnJlbWFya3M9NUwtRTU3Mlg1cGF2VWcmZ3JvdXA9VEc1amJpNXZjbWM',
-    'ssr://NDYuMjkuMTY0LjIzMTo5OTIxOm9yaWdpbjpyYzQ6cGxhaW46Ykc1amJpNXZjbWNnTm1jLz9vYmZzcGFyYW09JnJlbWFya3M9NUwtRTU3Mlg1cGF2VXcmZ3JvdXA9VEc1amJpNXZjbWM',
-    'ssr://NDYuMjkuMTY3LjEyNTo5OTIxOm9yaWdpbjpyYzQ6cGxhaW46Ykc1amJpNXZjbWNnTm1jLz9vYmZzcGFyYW09JnJlbWFya3M9NUwtRTU3Mlg1cGF2VkEmZ3JvdXA9VEc1amJpNXZjbWM',
-    'ssr://NDYuMjkuMTY0LjE0ODo5OTIxOm9yaWdpbjpyYzQ6cGxhaW46Ykc1amJpNXZjbWNnTm1vLz9vYmZzcGFyYW09JnJlbWFya3M9NUwtRTU3Mlg1cGF2VlEmZ3JvdXA9VEc1amJpNXZjbWM',
-    'ssr://NDYuMjkuMTY3LjIwMzo5OTIxOm9yaWdpbjpyYzQ6cGxhaW46Ykc1amJpNXZjbWNnTm1vLz9vYmZzcGFyYW09JnJlbWFya3M9NUwtRTU3Mlg1cGF2VmcmZ3JvdXA9VEc1amJpNXZjbWM',
-    'ssr://NDYuMjkuMTYxLjIxMTo5OTIxOm9yaWdpbjpyYzQ6cGxhaW46Ykc1amJpNXZjbWNnTm1vLz9vYmZzcGFyYW09JnJlbWFya3M9NUwtRTU3Mlg1cGF2VncmZ3JvdXA9VEc1amJpNXZjbWM',
-    'ssr://NDYuMjkuMTY0LjIxMzo5OTIxOm9yaWdpbjpyYzQ6cGxhaW46Ykc1amJpNXZjbWNnTm1vLz9vYmZzcGFyYW09JnJlbWFya3M9NUwtRTU3Mlg1cGF2V0EmZ3JvdXA9VEc1amJpNXZjbWM',
-    ''
-  ])
+  // sendToDd({
+  //   success: true,
+  //   msg: '新货到',
+  //   data: [
+  //     'ssr://MTk1LjEzMy4xMS4xMTU6OTkyMTpvcmlnaW46cmM0OnBsYWluOmJHNWpiaTV2Y21jZ05XWS8_b2Jmc3BhcmFtPSZyZW1hcmtzPTVMLUU1NzJYNXBhdlFRJmdyb3VwPVRHNWpiaTV2Y21j',
+  //     'ssr://MTk0LjE0Ny44Ni4xMzA6OTkyMTpvcmlnaW46cmM0OnBsYWluOmJHNWpiaTV2Y21jZ05XWS8_b2Jmc3BhcmFtPSZyZW1hcmtzPTVMLUU1NzJYNXBhdlFnJmdyb3VwPVRHNWpiaTV2Y21j',
+  //     'ssr://NDUuMTQwLjE3MC4yMzI6OTkyMTpvcmlnaW46cmM0OnBsYWluOmJHNWpiaTV2Y21jZ05XWS8_b2Jmc3BhcmFtPSZyZW1hcmtzPTVMLUU1NzJYNXBhdlF3Jmdyb3VwPVRHNWpiaTV2Y21j',
+  //     'ssr://OTEuMTk4LjIyMC4yMDA6OTkyMTpvcmlnaW46cmM0OnBsYWluOmJHNWpiaTV2Y21jZ05XWS8_b2Jmc3BhcmFtPSZyZW1hcmtzPTVMLUU1NzJYNXBhdlJBJmdyb3VwPVRHNWpiaTV2Y21j',
+  //     'ssr://NDYuMjkuMTY3LjIzODo5OTIxOm9yaWdpbjpyYzQ6cGxhaW46Ykc1amJpNXZjbWNnTm1jLz9vYmZzcGFyYW09JnJlbWFya3M9NUwtRTU3Mlg1cGF2VVEmZ3JvdXA9VEc1amJpNXZjbWM',
+  //     'ssr://NDYuMjkuMTY3LjE5NTo5OTIxOm9yaWdpbjpyYzQ6cGxhaW46Ykc1amJpNXZjbWNnTm1jLz9vYmZzcGFyYW09JnJlbWFya3M9NUwtRTU3Mlg1cGF2VWcmZ3JvdXA9VEc1amJpNXZjbWM',
+  //     'ssr://NDYuMjkuMTY0LjIzMTo5OTIxOm9yaWdpbjpyYzQ6cGxhaW46Ykc1amJpNXZjbWNnTm1jLz9vYmZzcGFyYW09JnJlbWFya3M9NUwtRTU3Mlg1cGF2VXcmZ3JvdXA9VEc1amJpNXZjbWM',
+  //     'ssr://NDYuMjkuMTY3LjEyNTo5OTIxOm9yaWdpbjpyYzQ6cGxhaW46Ykc1amJpNXZjbWNnTm1jLz9vYmZzcGFyYW09JnJlbWFya3M9NUwtRTU3Mlg1cGF2VkEmZ3JvdXA9VEc1amJpNXZjbWM',
+  //     'ssr://NDYuMjkuMTY0LjE0ODo5OTIxOm9yaWdpbjpyYzQ6cGxhaW46Ykc1amJpNXZjbWNnTm1vLz9vYmZzcGFyYW09JnJlbWFya3M9NUwtRTU3Mlg1cGF2VlEmZ3JvdXA9VEc1amJpNXZjbWM',
+  //     'ssr://NDYuMjkuMTY3LjIwMzo5OTIxOm9yaWdpbjpyYzQ6cGxhaW46Ykc1amJpNXZjbWNnTm1vLz9vYmZzcGFyYW09JnJlbWFya3M9NUwtRTU3Mlg1cGF2VmcmZ3JvdXA9VEc1amJpNXZjbWM',
+  //     'ssr://NDYuMjkuMTYxLjIxMTo5OTIxOm9yaWdpbjpyYzQ6cGxhaW46Ykc1amJpNXZjbWNnTm1vLz9vYmZzcGFyYW09JnJlbWFya3M9NUwtRTU3Mlg1cGF2VncmZ3JvdXA9VEc1amJpNXZjbWM',
+  //     'ssr://NDYuMjkuMTY0LjIxMzo5OTIxOm9yaWdpbjpyYzQ6cGxhaW46Ykc1amJpNXZjbWNnTm1vLz9vYmZzcGFyYW09JnJlbWFya3M9NUwtRTU3Mlg1cGF2V0EmZ3JvdXA9VEc1amJpNXZjbWM',
+  //     ''
+  //   ]
+  // })
 }
 
 main()
