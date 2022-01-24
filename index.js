@@ -124,6 +124,8 @@ const sendToDd = async res => {
     return
   }
 
+  const { data } = res
+
   /** 卡片-代码提交信息 */
   const title = `钉～请查收${today}的新鲜酸酸乳`
 
