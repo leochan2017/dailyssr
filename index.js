@@ -1,10 +1,17 @@
 const puppeteer = require('puppeteer-extra')
 const moment = require('moment')
-const axios = require('axios')
+// const axios = require('axios')
 const ChatBot = require('dingtalk-robot-sender')
 const __config__ = require('./config.js')
 
-const today = moment().format('MM月DD日')
+// 程序运行时今天'MM月DD日'
+let today = null
+
+// 今天是否拿过了
+let isReceiptToday = false
+
+// 最后一次成功获取的时间
+let lastRectiptDay = ''
 
 // 应用各种规避技术，使无头傀儡的检测更加困难。
 const StealthPlugin = require("puppeteer-extra-plugin-stealth")
@@ -70,6 +77,8 @@ const getSsrList = async () => {
 
     await browser.close()
 
+    lastRectipt = webSiteToday
+
     // 返回数组
     return { success: true, msg: '新货到', data: copiedText.split('\n') }
     // return { success: true, msg: '新货到', data: copiedText }
@@ -81,36 +90,36 @@ const getSsrList = async () => {
 }
 
 /** 用Sever酱推送到微信 */
-const sendToWeChatFromSeverJiang = data => {
-  if (!__config__.serverJiang.sendKey) return console.log('你sendKey呢?')
+// const sendToWeChatFromSeverJiang = data => {
+//   if (!__config__.serverJiang.sendKey) return console.log('你sendKey呢?')
 
-  const url = `https://sctapi.ftqq.com/${__config__.serverJiang.sendKey}.send`
+//   const url = `https://sctapi.ftqq.com/${__config__.serverJiang.sendKey}.send`
 
-  console.log('sendToWeChatFromSeverJiang data', data)
+//   console.log('sendToWeChatFromSeverJiang data', data)
 
-  const formData = new URLSearchParams()
-  // 最大长度32
-  formData.append('title', data.msg)
+//   const formData = new URLSearchParams()
+//   // 最大长度32
+//   formData.append('title', data.msg)
 
-  // 非会员不显示
-  formData.append('desp', JSON.stringify(data.list))
+//   // 非会员不显示
+//   formData.append('desp', JSON.stringify(data.list))
 
-  axios({
-    method: 'post',
-    url,
-    data: formData,
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded'
-    }
-  })
-    .then(function (response) {
-      // console.log('sendToWeChatFromSeverJiang succ', response)
-      console.log('推送成功')
-    })
-    .catch(function (error) {
-      console.log('sendToWeChatFromSeverJiang err', error)
-    })
-}
+//   axios({
+//     method: 'post',
+//     url,
+//     data: formData,
+//     headers: {
+//       'Content-Type': 'application/x-www-form-urlencoded'
+//     }
+//   })
+//     .then(function (response) {
+//       // console.log('sendToWeChatFromSeverJiang succ', response)
+//       console.log('推送成功')
+//     })
+//     .catch(function (error) {
+//       console.log('sendToWeChatFromSeverJiang err', error)
+//     })
+// }
 
 
 /** 往钉钉推送信息 */
@@ -144,37 +153,37 @@ const sendToDd = async res => {
   await ddRobot.markdown(title, text)
 
   console.log('推送钉钉完成')
+
+  isReceiptToday = true
 }
 
 /** 主程序 */
 const main = async () => {
+  today = moment().format('MM月DD日')
+
+  // 新的一天，重置值
+  if (today !== lastRectiptDay) {
+    isReceiptToday = false
+  }
+
+  if (isReceiptToday) {
+    console.log('今天已经取过了，明天请早')
+    return
+  }
+
   const res = await getSsrList()
-  // console.log('list response: ', res)
+  console.log('list response: ', res)
+
+  // 不需要拦截，把结果告诉钉钉
+  // if (!res.success) {
+  //   console.log(res.msg)
+  //   return
+  // }
+
   sendToDd(res)
 
   // 穷人没钱充钱，算了
   // sendToWeChatFromSeverJiang(res)
-
-  // dev code
-  // sendToDd({
-  //   success: true,
-  //   msg: '新货到',
-  //   data: [
-  //     'ssr://MTk1LjEzMy4xMS4xMTU6OTkyMTpvcmlnaW46cmM0OnBsYWluOmJHNWpiaTV2Y21jZ05XWS8_b2Jmc3BhcmFtPSZyZW1hcmtzPTVMLUU1NzJYNXBhdlFRJmdyb3VwPVRHNWpiaTV2Y21j',
-  //     'ssr://MTk0LjE0Ny44Ni4xMzA6OTkyMTpvcmlnaW46cmM0OnBsYWluOmJHNWpiaTV2Y21jZ05XWS8_b2Jmc3BhcmFtPSZyZW1hcmtzPTVMLUU1NzJYNXBhdlFnJmdyb3VwPVRHNWpiaTV2Y21j',
-  //     'ssr://NDUuMTQwLjE3MC4yMzI6OTkyMTpvcmlnaW46cmM0OnBsYWluOmJHNWpiaTV2Y21jZ05XWS8_b2Jmc3BhcmFtPSZyZW1hcmtzPTVMLUU1NzJYNXBhdlF3Jmdyb3VwPVRHNWpiaTV2Y21j',
-  //     'ssr://OTEuMTk4LjIyMC4yMDA6OTkyMTpvcmlnaW46cmM0OnBsYWluOmJHNWpiaTV2Y21jZ05XWS8_b2Jmc3BhcmFtPSZyZW1hcmtzPTVMLUU1NzJYNXBhdlJBJmdyb3VwPVRHNWpiaTV2Y21j',
-  //     'ssr://NDYuMjkuMTY3LjIzODo5OTIxOm9yaWdpbjpyYzQ6cGxhaW46Ykc1amJpNXZjbWNnTm1jLz9vYmZzcGFyYW09JnJlbWFya3M9NUwtRTU3Mlg1cGF2VVEmZ3JvdXA9VEc1amJpNXZjbWM',
-  //     'ssr://NDYuMjkuMTY3LjE5NTo5OTIxOm9yaWdpbjpyYzQ6cGxhaW46Ykc1amJpNXZjbWNnTm1jLz9vYmZzcGFyYW09JnJlbWFya3M9NUwtRTU3Mlg1cGF2VWcmZ3JvdXA9VEc1amJpNXZjbWM',
-  //     'ssr://NDYuMjkuMTY0LjIzMTo5OTIxOm9yaWdpbjpyYzQ6cGxhaW46Ykc1amJpNXZjbWNnTm1jLz9vYmZzcGFyYW09JnJlbWFya3M9NUwtRTU3Mlg1cGF2VXcmZ3JvdXA9VEc1amJpNXZjbWM',
-  //     'ssr://NDYuMjkuMTY3LjEyNTo5OTIxOm9yaWdpbjpyYzQ6cGxhaW46Ykc1amJpNXZjbWNnTm1jLz9vYmZzcGFyYW09JnJlbWFya3M9NUwtRTU3Mlg1cGF2VkEmZ3JvdXA9VEc1amJpNXZjbWM',
-  //     'ssr://NDYuMjkuMTY0LjE0ODo5OTIxOm9yaWdpbjpyYzQ6cGxhaW46Ykc1amJpNXZjbWNnTm1vLz9vYmZzcGFyYW09JnJlbWFya3M9NUwtRTU3Mlg1cGF2VlEmZ3JvdXA9VEc1amJpNXZjbWM',
-  //     'ssr://NDYuMjkuMTY3LjIwMzo5OTIxOm9yaWdpbjpyYzQ6cGxhaW46Ykc1amJpNXZjbWNnTm1vLz9vYmZzcGFyYW09JnJlbWFya3M9NUwtRTU3Mlg1cGF2VmcmZ3JvdXA9VEc1amJpNXZjbWM',
-  //     'ssr://NDYuMjkuMTYxLjIxMTo5OTIxOm9yaWdpbjpyYzQ6cGxhaW46Ykc1amJpNXZjbWNnTm1vLz9vYmZzcGFyYW09JnJlbWFya3M9NUwtRTU3Mlg1cGF2VncmZ3JvdXA9VEc1amJpNXZjbWM',
-  //     'ssr://NDYuMjkuMTY0LjIxMzo5OTIxOm9yaWdpbjpyYzQ6cGxhaW46Ykc1amJpNXZjbWNnTm1vLz9vYmZzcGFyYW09JnJlbWFya3M9NUwtRTU3Mlg1cGF2V0EmZ3JvdXA9VEc1amJpNXZjbWM',
-  //     ''
-  //   ]
-  // })
 }
 
-main()
+setInterval(main, __config__.intervalValue)

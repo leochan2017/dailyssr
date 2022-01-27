@@ -11,5 +11,9 @@ module.exports = {
     accessToken: '92dbd1595dbc829e6bdca24c10a456f00b2236c0e7b02444bc0304a8415b0c01',
     // 此处是签名
     secret: 'SEC859e29d72f86997ba6b1079060de6ca033920b22425473c842e78d5ec12b698b',
-  }
+  },
+  // 每间隔多少时间跑一次main
+  // 10分钟: 10*60*1000=600000
+  // 8小时: 8*60*60*1000=28800000
+  intervalValue: 28800000
 }
