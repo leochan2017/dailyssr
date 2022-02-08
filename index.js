@@ -186,4 +186,7 @@ const main = async () => {
   // sendToWeChatFromSeverJiang(res)
 }
 
+// 先执行一次
+main()
+
 setInterval(main, __config__.intervalValue)
