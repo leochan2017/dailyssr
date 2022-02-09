@@ -1,6 +1,5 @@
 const puppeteer = require('puppeteer-extra')
 const moment = require('moment')
-// const axios = require('axios')
 const ChatBot = require('dingtalk-robot-sender')
 const __config__ = require('./config.js')
 
@@ -89,39 +88,6 @@ const getSsrList = async () => {
   }
 }
 
-/** 用Sever酱推送到微信 */
-// const sendToWeChatFromSeverJiang = data => {
-//   if (!__config__.serverJiang.sendKey) return console.log('你sendKey呢?')
-
-//   const url = `https://sctapi.ftqq.com/${__config__.serverJiang.sendKey}.send`
-
-//   console.log('sendToWeChatFromSeverJiang data', data)
-
-//   const formData = new URLSearchParams()
-//   // 最大长度32
-//   formData.append('title', data.msg)
-
-//   // 非会员不显示
-//   formData.append('desp', JSON.stringify(data.list))
-
-//   axios({
-//     method: 'post',
-//     url,
-//     data: formData,
-//     headers: {
-//       'Content-Type': 'application/x-www-form-urlencoded'
-//     }
-//   })
-//     .then(function (response) {
-//       // console.log('sendToWeChatFromSeverJiang succ', response)
-//       console.log('推送成功')
-//     })
-//     .catch(function (error) {
-//       console.log('sendToWeChatFromSeverJiang err', error)
-//     })
-// }
-
-
 /** 往钉钉推送信息 */
 const sendToDd = async res => {
   // 钉钉机器人初始化
@@ -182,8 +148,6 @@ const main = async () => {
 
   sendToDd(res)
 
-  // 穷人没钱充钱，算了
-  // sendToWeChatFromSeverJiang(res)
 }
 
 // 先执行一次
