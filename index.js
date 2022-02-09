@@ -3,6 +3,8 @@ const moment = require('moment')
 const ChatBot = require('dingtalk-robot-sender')
 const __config__ = require('./config.js')
 
+console.log('------ 项目 dailyssr 启动 ------')
+
 // 程序运行时今天'MM月DD日'
 let today = null
 
@@ -151,6 +153,6 @@ const main = async () => {
 }
 
 // 先执行一次
-main()
+// main()
 
-setInterval(main, __config__.intervalValue)
+// setInterval(main, __config__.intervalValue)
