@@ -153,6 +153,6 @@ const main = async () => {
 }
 
 // 先执行一次
-// main()
+main()
 
-// setInterval(main, __config__.intervalValue)
+setInterval(main, __config__.intervalValue)
