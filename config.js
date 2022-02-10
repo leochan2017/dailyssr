@@ -17,5 +17,7 @@ module.exports = {
   // 1小时: 1*60*60*1000=3600000
   // 6小时: 6*60*60*1000=21600000
   // 8小时: 8*60*60*1000=28800000
-  intervalValue: 21600000
+  intervalValue: 3600000,
+  // 记录时间的文件
+  logFilePath: './last-get-date.txt'
 }
