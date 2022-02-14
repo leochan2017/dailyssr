@@ -54,7 +54,7 @@ const getSsrList = async () => {
 
     // 程序调用时的今天
     if (today !== webSiteToday) {
-      return { success: false, msg: '没新货', data: [] }
+      return { success: false, msg: `${today}没新货, 当前这批货还是${webSiteToday}`, data: [] }
     }
 
     // 有新货，继续搞
