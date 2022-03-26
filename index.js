@@ -77,7 +77,7 @@ const getSsrList = async () => {
         console.log('写入失败', error)
         return
       }
-  
+
       console.log(`最新日期写入到 "${__config__.logFilePath}" 成功`)
     })
 
@@ -90,6 +90,8 @@ const getSsrList = async () => {
     return { success: false, msg: msg, data: e }
   }
 }
+
+const __ALPHABET__ = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
 
 /** 往钉钉推送信息 */
 const sendToDd = async res => {
@@ -112,8 +114,8 @@ const sendToDd = async res => {
   for (let i = 0; i < data.length; i++) {
     const item = data[i]
     if (!item) break
-
-    text += `### 酸酸乳${i}:\n`
+    const ssrIndex = __ALPHABET__[i] || i
+    text += `### 酸酸乳${ssrIndex}:\n`
     text += `${item}\n`
     // 钉钉上点击不会直接生效?
     // text += `[${item}](${item})\n\n`
