@@ -22,8 +22,11 @@ puppeteer.use(StealthPlugin())
 //   return choices[index]
 // }
 
-/** 获取ssr列表 */
-const getSsrList = async () => {
+/** 
+ * 获取ssr列表
+ * ignoreDate: 是否忽略日期判断，继续取
+ */
+const getSsrList = async (ignoreDate) => {
   try {
     const browser = await puppeteer.launch({
       headless: true,
@@ -44,17 +47,24 @@ const getSsrList = async () => {
 
     await page.goto(__config__.webSite)
 
-    await page.waitForSelector(__config__.timeSpan)
+    if (!ignoreDate) {
+      await page.waitForSelector(__config__.timeSpan)
+      const timeSpan = await page.$eval(__config__.timeSpan, node => node.innerText)
+      // 网站上的今天
+      const webSiteToday = timeSpan.split(' ')[0]
+      // console.log('webSiteToday', webSiteToday)
+      // 程序调用时的今天
+      if (today !== webSiteToday) {
+        return { success: false, msg: `${today}没新货, 当前这批货还是${webSiteToday}`, data: [] }
+      }
+      fs.writeFile(__config__.logFilePath, webSiteToday, (error) => {
+        if (error) {
+          console.log('写入失败', error)
+          return
+        }
 
-    const timeSpan = await page.$eval(__config__.timeSpan, node => node.innerText)
-
-    // 网站上的今天
-    const webSiteToday = timeSpan.split(' ')[0]
-    // console.log('webSiteToday', webSiteToday)
-
-    // 程序调用时的今天
-    if (today !== webSiteToday) {
-      return { success: false, msg: `${today}没新货, 当前这批货还是${webSiteToday}`, data: [] }
+        console.log(`最新日期写入到 "${__config__.logFilePath}" 成功`)
+      })
     }
 
     // 有新货，继续搞
@@ -71,15 +81,6 @@ const getSsrList = async () => {
     // console.log(copiedText.split('\n'))
 
     await browser.close()
-
-    fs.writeFile(__config__.logFilePath, webSiteToday, (error) => {
-      if (error) {
-        console.log('写入失败', error)
-        return
-      }
-
-      console.log(`最新日期写入到 "${__config__.logFilePath}" 成功`)
-    })
 
     // 返回数组
     return { success: true, msg: '新货到', data: copiedText.split('\n') }
@@ -161,11 +162,13 @@ const main = async () => {
       console.log('今天已经取过了，明天请早')
       return
     }
-    
+
+    const ignoreDate = logStr === '' ? true : false
+
     // 新的一天，可以去拿
-    const res = await getSsrList()
+    const res = await getSsrList(ignoreDate)
     console.log('list response: ', res)
-  
+
     sendToDd(res)
   })
 
