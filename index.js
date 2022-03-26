@@ -57,14 +57,6 @@ const getSsrList = async (ignoreDate) => {
       if (today !== webSiteToday) {
         return { success: false, msg: `${today}没新货, 当前这批货还是${webSiteToday}`, data: [] }
       }
-      fs.writeFile(__config__.logFilePath, webSiteToday, (error) => {
-        if (error) {
-          console.log('写入失败', error)
-          return
-        }
-
-        console.log(`最新日期写入到 "${__config__.logFilePath}" 成功`)
-      })
     }
 
     // 有新货，继续搞
@@ -81,6 +73,15 @@ const getSsrList = async (ignoreDate) => {
     // console.log(copiedText.split('\n'))
 
     await browser.close()
+
+    fs.writeFile(__config__.logFilePath, today, (error) => {
+      if (error) {
+        console.log('写入失败', error)
+        return
+      }
+
+      console.log(`最新日期写入到 "${__config__.logFilePath}" 成功`)
+    })
 
     // 返回数组
     return { success: true, msg: '新货到', data: copiedText.split('\n') }
