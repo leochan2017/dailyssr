@@ -1,13 +1,13 @@
 const fs = require('fs')
 const puppeteer = require('puppeteer-extra')
-const moment = require('moment')
 const ChatBot = require('dingtalk-robot-sender')
 const __config__ = require('./config.js')
 
 console.log('------ 项目 dailyssr 启动 ------')
 
-// 程序运行时今天'MM月DD日'
-let today = null
+const __ALPHABET__ = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
+
+let webSiteTime = ''
 
 // 应用各种规避技术，使无头傀儡的检测更加困难。
 const StealthPlugin = require('puppeteer-extra-plugin-stealth')
@@ -24,9 +24,8 @@ puppeteer.use(StealthPlugin())
 
 /** 
  * 获取ssr列表
- * ignoreDate: 是否忽略日期判断，继续取
  */
-const getSsrList = async (ignoreDate) => {
+const getSsrList = async (logStr) => {
   try {
     const browser = await puppeteer.launch({
       headless: true,
@@ -47,19 +46,18 @@ const getSsrList = async (ignoreDate) => {
 
     await page.goto(__config__.webSite)
 
-    if (!ignoreDate) {
-      await page.waitForSelector(__config__.timeSpan)
-      const timeSpan = await page.$eval(__config__.timeSpan, node => node.innerText)
-      // 网站上的今天
-      const webSiteToday = timeSpan.split(' ')[0]
-      // console.log('webSiteToday', webSiteToday)
-      // 程序调用时的今天
-      if (today !== webSiteToday) {
-        return { success: false, msg: `${today}没新货, 当前这批货还是${webSiteToday}`, data: [] }
-      }
+    await page.waitForSelector(__config__.timeSpan)
+
+    webSiteTime = await page.$eval(__config__.timeSpan, node => node.innerText)
+    console.log('webSiteTime 的内容: ', webSiteTime)
+
+    if (logStr === webSiteTime) {
+      const msg = `当前没有新货，将在${__config__.intervalValue}毫秒后再试.`
+      return { success: false, msg, data: [] }
     }
 
-    // 有新货，继续搞
+    console.log('有新货，继续搞')
+
     await page.waitForSelector(__config__.getAllEl)
 
     await page.click(__config__.getAllEl)
@@ -74,7 +72,7 @@ const getSsrList = async (ignoreDate) => {
 
     await browser.close()
 
-    fs.writeFile(__config__.logFilePath, today, (error) => {
+    fs.writeFile(__config__.logFilePath, webSiteTime, (error) => {
       if (error) {
         console.log('写入失败', error)
         return
@@ -85,7 +83,6 @@ const getSsrList = async (ignoreDate) => {
 
     // 返回数组
     return { success: true, msg: '新货到', data: copiedText.split('\n') }
-    // return { success: true, msg: '新货到', data: copiedText }
   } catch (e) {
     const msg = '获取酸酸乳列表出错'
     console.log(msg, e)
@@ -93,10 +90,10 @@ const getSsrList = async (ignoreDate) => {
   }
 }
 
-const __ALPHABET__ = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
-
 /** 往钉钉推送信息 */
 const sendToDd = async res => {
+  if (!res) return
+
   // 钉钉机器人初始化
   const { baseUrl, accessToken, secret } = __config__.dd
   const ddRobot = new ChatBot({ baseUrl, accessToken, secret })
@@ -109,7 +106,7 @@ const sendToDd = async res => {
   const { data } = res
 
   /** 卡片-代码提交信息 */
-  const title = `钉～请查收${today}的新鲜酸酸乳`
+  const title = `${webSiteTime}的新鲜酸酸乳到货囖～`
 
   let text = `## ${title}\n`
 
@@ -125,54 +122,35 @@ const sendToDd = async res => {
 
   await ddRobot.markdown(title, text)
 
-  console.log('推送钉钉完成')
+  console.log('------- 推送钉钉完成 -------', title)
+  console.log(' ')
 }
 
-/** 程序初始化 */
-const init = () => {
-  fs.access(__config__.logFilePath, err => {
-    if (err) {
-      console.log('文件不存在... 初始化一个吧')
-      fs.writeFileSync(__config__.logFilePath, '')
-    }
-  })
+
+const initLogFile = () => {
+  try {
+    fs.accessSync(__config__.logFilePath)
+    console.log('文件存在... 继续')
+  } catch (err) {
+    console.log('文件不存在... 初始化一个吧')
+    fs.writeFileSync(__config__.logFilePath, '')
+  }
 }
 
 /** 主程序 */
 const main = async () => {
-  init()
+  initLogFile()
 
-  today = moment().format('MM月DD日')
+  // 与本地文件判断
+  console.log('开始文件比对..')
+  const logData = fs.readFileSync(__config__.logFilePath)
+  const logStr = logData.toString()
+  console.log(`${__config__.logFilePath} 的内容: `, logStr)
 
-  fs.readFile(__config__.logFilePath, async (error, data) => {
-    if (error) {
-      console.log('读取文件失败了', error)
-      return
-    }
+  const res = await getSsrList(logStr)
+  console.log('list response: ', res)
 
-    // <Buffer 68 65 6c 6c 6f 20 6e 6f 64 65 6a 73 0d 0a>
-    // 文件中存储的其实都是二进制数据 0 1
-    // 这里为什么看到的不是 0 和 1 呢？原因是二进制转为 16 进制了
-    // 但是无论是二进制01还是16进制，人类都不认识
-    // 所以我们可以通过 toString 方法把其转为我们能认识的字符
-    const logStr = data.toString()
-    console.log(`${__config__.logFilePath}: `, logStr)
-
-    // 今天拿过了，明天请早
-    if (logStr === today) {
-      console.log('今天已经取过了，明天请早')
-      return
-    }
-
-    const ignoreDate = logStr === '' ? true : false
-
-    // 新的一天，可以去拿
-    const res = await getSsrList(ignoreDate)
-    console.log('list response: ', res)
-
-    sendToDd(res)
-  })
-
+  sendToDd(res)
 }
 
 // 先执行一次
