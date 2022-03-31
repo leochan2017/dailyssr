@@ -2,10 +2,9 @@ const fs = require('fs')
 const puppeteer = require('puppeteer-extra')
 const ChatBot = require('dingtalk-robot-sender')
 const __config__ = require('./config.js')
+const moment = require('moment')
 
 console.log('------ 项目 dailyssr 启动 ------')
-
-const __ALPHABET__ = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
 
 let webSiteTime = ''
 
@@ -113,8 +112,7 @@ const sendToDd = async res => {
   for (let i = 0; i < data.length; i++) {
     const item = data[i]
     if (!item) break
-    const ssrIndex = __ALPHABET__[i] || i
-    text += `### 酸酸乳${ssrIndex}:\n`
+    text += `### 酸酸乳${i}:\n`
     text += `${item}\n`
     // 钉钉上点击不会直接生效?
     // text += `[${item}](${item})\n\n`
@@ -137,6 +135,24 @@ const initLogFile = () => {
   }
 }
 
+/** 距离上一次拿到数据有没有大于x毫秒 */
+const canFetchNow = (logStr) => {
+  if (!logStr) return true
+
+  const logMomentStr = `${new Date().getFullYear()}年${logStr}`
+  const logMoment = moment(logMomentStr, 'YYYY年MM月DD日 HH点mm分')
+  const diff = moment().diff(logMoment)
+
+  console.log('logMoment:', logMomentStr)
+  console.log('currentMoment:', moment().format('YYYY年MM月DD日 HH点mm分'))
+
+  if (diff < __config__.fetchInterval) {
+    return false
+  }
+
+  return true
+}
+
 /** 主程序 */
 const main = async () => {
   initLogFile()
@@ -146,6 +162,13 @@ const main = async () => {
   const logData = fs.readFileSync(__config__.logFilePath)
   const logStr = logData.toString()
   console.log(`${__config__.logFilePath} 的内容: `, logStr)
+
+  if (!canFetchNow(logStr)) {
+    console.log(`距离上一次拿到数据小于${__config__.fetchInterval / 1000 / 60}分钟，算了，别去请求`)
+    return
+  }
+
+  console.log('可以执行请求新的ssr列表了')
 
   const res = await getSsrList(logStr)
   console.log('list response: ', res)
