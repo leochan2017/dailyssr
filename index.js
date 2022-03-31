@@ -24,7 +24,7 @@ puppeteer.use(StealthPlugin())
 /** 
  * 获取ssr列表
  */
-const getSsrList = async (logStr) => {
+const getSsrList = async (logStr, isForceRun) => {
   try {
     const browser = await puppeteer.launch({
       headless: true,
@@ -50,7 +50,7 @@ const getSsrList = async (logStr) => {
     webSiteTime = await page.$eval(__config__.timeSpan, node => node.innerText)
     console.log('webSiteTime 的内容: ', webSiteTime)
 
-    if (logStr === webSiteTime) {
+    if (!isForceRun && logStr === webSiteTime) {
       const msg = `当前没有新货，将在${__config__.intervalValue}毫秒后再试.`
       return { success: false, msg, data: [] }
     }
@@ -77,7 +77,7 @@ const getSsrList = async (logStr) => {
         return
       }
 
-      console.log(`最新日期写入到 "${__config__.logFilePath}" 成功`)
+      console.log(`网站上的最新日期写入到 "${__config__.logFilePath}" 成功`)
     })
 
     // 返回数组
@@ -154,29 +154,32 @@ const canFetchNow = (logStr) => {
 }
 
 /** 主程序 */
-const main = async () => {
+const main = async (isForceRun) => {
   initLogFile()
 
-  // 与本地文件判断
-  console.log('开始文件比对..')
   const logData = fs.readFileSync(__config__.logFilePath)
   const logStr = logData.toString()
-  console.log(`${__config__.logFilePath} 的内容: `, logStr)
 
-  if (!canFetchNow(logStr)) {
-    console.log(`距离上一次拿到数据小于${__config__.fetchInterval / 1000 / 60}分钟，算了，别去请求`)
-    return
+  if (!isForceRun) {
+    // 与本地文件判断
+    console.log('开始文件比对..')
+    console.log(`${__config__.logFilePath} 的内容: `, logStr)
+
+    if (!canFetchNow(logStr)) {
+      console.log(`距离上一次拿到数据小于${__config__.fetchInterval / 1000 / 60}分钟，算了，别去请求`)
+      return
+    }
   }
 
   console.log('可以执行请求新的ssr列表了')
 
-  const res = await getSsrList(logStr)
+  const res = await getSsrList(logStr, isForceRun === true)
   console.log('list response: ', res)
 
   sendToDd(res)
 }
 
 // 先执行一次
-main()
+main(true)
 // 再跑定时器
 setInterval(main, __config__.intervalValue)
