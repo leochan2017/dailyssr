@@ -181,8 +181,8 @@ const main = async (isForceRun) => {
 
 // new:
 // ps: 现在不跑定时器了，用pm2 的定时任务吧:
-// */60  * * * *
-main()
+// */60 * * * *
+main(false)
 
 
 // old:
