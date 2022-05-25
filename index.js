@@ -179,7 +179,14 @@ const main = async (isForceRun) => {
   sendToDd(res)
 }
 
+// new:
+// ps: 现在不跑定时器了，用pm2 的定时任务吧:
+// */60  * * * *
+main()
+
+
+// old:
 // 先执行一次
-main(true)
+// main(true)
 // 再跑定时器
-setInterval(main, __config__.intervalValue)
+// setInterval(main, __config__.intervalValue)
